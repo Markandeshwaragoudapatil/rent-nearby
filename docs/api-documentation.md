@@ -1,78 +1,120 @@
-# REST API contract (planned)
+# RentNearby REST API
 
-Base path: `/api/v1`. JSON requests/responses. Cookie-authenticated routes require CSRF token on unsafe methods. All IDs are UUIDs. Paginated collections use `{ "items": [], "page": 1, "per_page": 20, "total": 0 }`.
+Base URL for local development: `http://localhost:5000/api/v1`
 
-## Public and authentication
+All request and response bodies use JSON unless otherwise stated. IDs are UUIDs. Prices are integer paise (₹1 = 100 paise). Cookie-authenticated requests must send credentials and a CSRF header on unsafe methods.
 
-| Method | Endpoint | Purpose | Access |
+## Session and CSRF
+
+Before the first POST/PATCH/PUT/DELETE request, call:
+
+```http
+GET /auth/csrf
+```
+
+Response:
+
+```json
+{ "csrf_token": "..." }
+```
+
+Keep the session cookie and send the token as `X-CSRFToken`. The React API client handles this bootstrap automatically and uses `credentials: "include"`.
+
+## Implemented endpoints
+
+| Method | Endpoint | Access | Purpose |
 |---|---|---|---|
-| GET | `/health` | Health check | Public |
-| GET | `/categories` | Active categories | Public |
-| GET | `/products` | Search/filter approved active listings | Public |
-| GET | `/products/{id}` | Product details | Public |
-| POST | `/auth/register` | Create account | Public + rate limit |
-| POST | `/auth/login` | Create session | Public + rate limit + CSRF bootstrap |
-| POST | `/auth/logout` | Revoke session | Authenticated |
-| GET | `/auth/me` | Current user | Authenticated |
-| POST | `/auth/verify-email` | Verify email token | Public, token-bound |
-| POST | `/auth/forgot-password` | Request reset | Public + rate limit |
-| POST | `/auth/reset-password` | Reset password | Public, token-bound |
+| GET | `/health` | Public | API and database health |
+| GET | `/categories` | Public | Active categories |
+| GET | `/products` | Public | Active listings; supports `q`, `locality`, `category`, `page`, `per_page` |
+| GET | `/products/{id}` | Public | Active product detail |
+| GET | `/products/{id}/availability?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` | Public | Check blocked dates and reserved bookings |
+| GET | `/auth/csrf` | Public | Create CSRF token |
+| POST | `/auth/register` | Public + rate limit + CSRF | Register a RENTER account |
+| POST | `/auth/login` | Public + rate limit + CSRF | Create session |
+| POST | `/auth/logout` | Authenticated + CSRF | Clear session |
+| GET | `/auth/me` | Authenticated | Current user |
+| GET | `/owner/products` | OWNER | List own products |
+| POST | `/owner/products` | OWNER | Create a DRAFT listing |
+| POST | `/owner/products/{id}/submit` | OWNER | Submit a complete listing for moderation |
+| POST | `/bookings` | RENTER | Create a booking request |
+| GET | `/bookings` | RENTER | List own booking requests |
+| GET | `/bookings/{id}` | Booking participant or ADMIN | Read booking detail |
+| POST | `/bookings/{id}/cancel` | RENTER | Cancel before payment confirmation |
+| GET | `/owner/bookings` | OWNER | List requests for own products |
+| POST | `/owner/bookings/{id}/accept` | Owner of product | Accept request and create a 30-minute payment hold |
+| POST | `/owner/bookings/{id}/reject` | Owner of product | Reject pending request |
+| POST | `/owner/products/{id}/availability-blocks` | OWNER of product | Block a date range |
+| DELETE | `/owner/availability-blocks/{id}` | OWNER of product | Remove an availability block |
 
-## Profile and renter
+### Registration
 
-| Method | Endpoint | Purpose | Access |
-|---|---|---|---|
-| PATCH | `/users/me` | Update profile | Authenticated self |
-| GET/POST | `/users/me/addresses` | List/create addresses | Authenticated self |
-| PATCH/DELETE | `/users/me/addresses/{id}` | Update/delete address | Owner of address |
-| GET | `/users/me/bookings` | Renter booking history | Authenticated self |
-| POST | `/products/{id}/availability-check` | Check date availability and quote | Public |
-| POST | `/products/{id}/bookings` | Create booking request | Authenticated renter |
-| GET | `/bookings/{id}` | Booking detail | Booking participant/admin |
-| POST | `/bookings/{id}/cancel` | Request cancellation | Booking participant under policy |
-| POST | `/bookings/{id}/reviews` | Review completed booking | Booking renter |
-| GET/POST/DELETE | `/users/me/wishlist` | Manage saved products | Authenticated self |
+```json
+{
+  "name": "Example Renter",
+  "email": "renter@example.com",
+  "password": "at-least-twelve-characters"
+}
+```
 
-## Owner
+The server always assigns `RENTER`. Never send a role field or expect public registration to grant owner/admin permissions.
 
-| Method | Endpoint | Purpose | Access |
-|---|---|---|---|
-| GET/POST | `/owner/products` | List/create own listings | Owner |
-| GET/PATCH/DELETE | `/owner/products/{id}` | Read/update/archive own listing | Owner of listing |
-| POST | `/owner/products/{id}/submit` | Submit for moderation | Owner of listing |
-| POST | `/owner/products/{id}/availability` | Add availability/blackout rule | Owner of listing |
-| GET | `/owner/bookings` | Requests and rental history | Owner |
-| POST | `/owner/bookings/{id}/accept` | Accept request and create payment window | Owner of product |
-| POST | `/owner/bookings/{id}/reject` | Reject request | Owner of product |
-| POST | `/owner/bookings/{id}/handover` | Confirm handover with OTP/evidence | Owner of product |
-| POST | `/owner/bookings/{id}/return` | Record return | Owner of product |
-| GET | `/owner/earnings` | Earnings ledger (not deposits) | Owner |
+### Create booking request
 
-## Payments and webhooks
+```http
+POST /bookings
+Idempotency-Key: a-client-generated-unique-key
+X-CSRFToken: ...
+Content-Type: application/json
+```
 
-| Method | Endpoint | Purpose | Access |
-|---|---|---|---|
-| POST | `/bookings/{id}/payment-order` | Create provider order for accepted booking | Booking renter |
-| POST | `/payments/verify` | Verify checkout signature server-side | Booking renter; provider verification |
-| POST | `/webhooks/razorpay` | Signed provider events; idempotent | Provider signature |
+```json
+{
+  "product_id": "UUID",
+  "start_date": "2030-01-10",
+  "end_date": "2030-01-13"
+}
+```
 
-## Admin
+The backend calculates the rental amount from the product's daily price and date range, adds the security deposit, and ignores any client-supplied price fields. The end date is exclusive (checkout); adjacent bookings are allowed.
 
-| Method | Endpoint | Purpose | Access |
-|---|---|---|---|
-| GET | `/admin/overview` | Platform metrics | Admin |
-| GET | `/admin/users` | Search users | Admin |
-| POST | `/admin/users/{id}/suspend` | Suspend account | Admin |
-| GET | `/admin/products/pending` | Moderation queue | Admin |
-| POST | `/admin/products/{id}/approve` | Approve listing | Admin |
-| POST | `/admin/products/{id}/reject` | Reject listing | Admin |
-| GET | `/admin/bookings` | Booking oversight | Admin |
-| GET | `/admin/disputes` | Dispute queue | Admin |
-| POST | `/admin/disputes/{id}/resolve` | Record resolution | Admin |
-| GET/POST/PATCH | `/admin/categories` | Category management | Admin |
+New requests begin as `PENDING` and do not reserve inventory. The owner can accept one request. Acceptance is protected by a product row lock and a PostgreSQL partial GiST exclusion constraint. An accepted booking holds dates for 30 minutes while payment integration is pending.
 
-## Error format
+Schedule this command every five minutes to release expired unpaid holds:
 
-`{ "error": { "code": "VALIDATION_ERROR", "message": "Please correct the highlighted fields.", "fields": { "start_date": "Must be before end_date." }, "request_id": "..." } }`
+```bash
+flask --app run.py expire-booking-holds
+```
 
-Use appropriate HTTP status codes: 400 malformed input, 401 unauthenticated, 403 forbidden, 404 absent/not visible, 409 conflict (availability/state/idempotency), 422 validation, 429 rate limited, 500 generic internal error. Never return stack traces or secrets.
+## Response and error format
+
+Success examples:
+
+```json
+{ "user": { "id": "UUID", "name": "Example", "email": "renter@example.com", "role": "RENTER", "verification_status": "UNVERIFIED" } }
+```
+
+```json
+{ "items": [], "page": 1, "per_page": 20, "total": 0 }
+```
+
+Errors use:
+
+```json
+{ "error": { "code": "CONFLICT", "message": "The selected dates overlap with an existing reservation." } }
+```
+
+Common status codes: 400 malformed request/CSRF, 401 unauthenticated, 403 forbidden, 404 not found/not visible, 409 booking or state conflict, 422 validation error, 429 rate limited, 500 unexpected server error. Internal stack traces are not returned.
+
+## Planned but not implemented
+
+- Profile and address management
+- Email/phone verification and password reset
+- Product image uploads (Cloudinary)
+- Admin moderation and category management
+- Razorpay order creation, payment signature verification and webhooks
+- Transition from accepted/payment-pending to confirmed after verified payment
+- Handover, return, damage evidence, reviews and disputes APIs
+- Owner earnings ledger and platform commission accounting
+
+Do not treat the presence of model tables as evidence that these workflows are available. No real payments should be accepted yet.
