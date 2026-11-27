@@ -17,7 +17,7 @@ def create_app(config_object=None):
             config_object = DevelopmentConfig
     app.config.from_object(config_object)
     db.init_app(app)
-    migrate.init_app(app, directory=os.path.join(os.path.dirname(__file__), "..", "migrations"))
+    migrate.init_app(app, db, directory=os.path.join(os.path.dirname(__file__), "..", "migrations"))
     csrf.init_app(app)
     limiter.init_app(app)
     CORS(app, origins=app.config["CORS_ORIGINS"], supports_credentials=True,
