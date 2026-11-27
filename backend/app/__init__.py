@@ -1,8 +1,11 @@
 import os
+
 from flask import Flask, jsonify
 from flask_cors import CORS
+
 from config import DevelopmentConfig, ProductionConfig
 from .extensions import csrf, db, limiter, migrate
+
 
 def create_app(config_object=None):
     app = Flask(__name__)
@@ -25,8 +28,11 @@ def create_app(config_object=None):
          methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"])
     from . import models
     from .api import register_blueprints
+    from .cli import register_commands
     from .errors import register_error_handlers
     register_blueprints(app)
+    register_commands(app)
+    register_error_handlers(app)
 
     @app.get("/")
     def index():
