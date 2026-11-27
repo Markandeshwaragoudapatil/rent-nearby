@@ -43,11 +43,18 @@ def list_owner_applications():
     status = request.args.get("status", "PENDING").upper()
     if status not in {"PENDING", "APPROVED", "REJECTED", "ALL"}:
         abort(400, description="Unsupported application status.")
-    query = select(OwnerApplication).order_by(OwnerApplication.created_at.asc())
+    query = select(OwnerApplication, User).join(User, User.id == OwnerApplication.user_id).order_by(OwnerApplication.created_at.asc())
     if status != "ALL":
         query = query.where(OwnerApplication.status == status)
-    applications = db.session.scalars(query.limit(100)).all()
-    return jsonify({"items": [item.to_dict() | {"user_id": str(item.user_id)} for item in applications]})
+    rows = db.session.execute(query.limit(100)).all()
+    return jsonify({"items": [
+        application.to_dict() | {
+            "user_id": str(application.user_id),
+            "applicant_name": user.name,
+            "applicant_email": user.email,
+        }
+        for application, user in rows
+    ]})
 
 
 @admin_bp.patch("/owner-applications/<uuid:application_id>/decision")
