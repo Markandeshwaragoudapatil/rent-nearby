@@ -39,3 +39,34 @@
 .catalogue-status{font-size:12px;color:var(--muted);padding:30px 0}
 .detail-placeholder{height:470px;border-radius:12px}
 @media(max-width:760px){.detail-placeholder{height:320px}}
+
+
+.workflow-status{display:flex;align-items:flex-start;gap:12px;max-width:720px;padding:16px 18px;margin:25px 0;background:#eef4e9;border:1px solid #dce8d7;border-radius:8px;color:#34513d;font-size:12px}
+.workflow-status svg{flex:0 0 auto;margin-top:2px}
+.workflow-status p{margin:5px 0 0;line-height:1.6;color:#68776b}
+.workflow-status a{font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.workflow-rejected{background:#fbf1ec;border-color:#f1ded4;color:#8c4938}
+.workflow-card{max-width:650px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:28px;margin-top:24px}
+.workflow-card h2,.admin-section-heading h2{font-family:Manrope,sans-serif;font-size:22px;letter-spacing:-.7px;margin:0 0 22px}
+.workflow-card textarea{width:100%;border:1px solid #dce3da;border-radius:7px;background:#fbfcfa;padding:13px 12px;font:inherit;font-size:13px;resize:vertical}
+.workflow-card textarea:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,91,70,.1)}
+.workflow-footnote{font-size:10px;color:var(--muted);margin-top:18px}
+.admin-toolbar{display:flex;align-items:center;justify-content:space-between;max-width:900px;margin:30px 0 36px}
+.admin-toolbar>span{display:flex;align-items:center;gap:8px;color:var(--green);font-size:11px;font-weight:700}
+.admin-toolbar .button{padding:10px 13px}
+.admin-section{max-width:900px;margin:0 0 45px}
+.admin-section-heading{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px}
+.admin-section-heading h2{margin:0}
+.admin-section-heading>span,.status-pill{font-size:9px;color:#61745f;background:#edf2e9;padding:6px 8px;border-radius:4px;font-weight:700}
+.admin-empty{padding:24px;border:1px dashed #cbd6ca;border-radius:8px;color:var(--muted);font-size:12px}
+.admin-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;margin-bottom:14px}
+.admin-card-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.admin-card-heading h3{font-family:Manrope,sans-serif;font-size:19px;letter-spacing:-.5px;margin:8px 0 0}
+.admin-card>p{font-size:12px;line-height:1.7;color:#66736d}
+.admin-meta{display:flex;flex-wrap:wrap;gap:8px 18px;color:#758178;font-size:10px;margin:14px 0}
+.admin-note{display:flex;flex-direction:column;gap:7px;max-width:520px;font-size:10px;font-weight:700;color:#526056;margin-top:18px}
+.admin-note input{border:1px solid #dce3da;border-radius:6px;padding:10px 11px;font:inherit;font-size:12px;font-weight:400}
+.admin-actions{display:flex;gap:10px;margin-top:16px}
+.admin-actions .button{padding:10px 14px;cursor:pointer}
+.admin-actions .button:disabled{opacity:.55;cursor:wait}
+@media(max-width:600px){.workflow-card{padding:20px 16px}.admin-card{padding:17px}.admin-toolbar{align-items:flex-start;gap:15px}.admin-actions{flex-wrap:wrap}.admin-actions .button{flex:1}}
