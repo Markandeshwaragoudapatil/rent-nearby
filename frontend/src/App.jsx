@@ -1,0 +1,9 @@
+import { Routes, Route } from 'react-router-dom'
+import Header from './components/Header'
+import Footer from './components/Footer'
+import Home from './pages/Home'
+import { Browse, ProductDetail, InfoPage } from './pages/BasicPages'
+
+export default function App() {
+  return <><Header/><Routes><Route path="/" element={<Home/>}/><Route path="/browse" element={<Browse/>}/><Route path="/product/:id" element={<ProductDetail/>}/><Route path="/login" element={<InfoPage title="Welcome back." text="Account access is coming with the authentication milestone."/>}/><Route path="/register" element={<InfoPage title="Make yourself at home." text="Account creation will be available when secure authentication is implemented."/>}/><Route path="/list-item" element={<InfoPage title="Your things can go places." text="Owner onboarding and listing creation are part of the next implementation milestone."/>}/><Route path="/about" element={<InfoPage title="A more useful way to share." text="RentNearby is building a neighbourhood-first rental marketplace, starting in Bengaluru."/>}/><Route path="/contact" element={<InfoPage title="Let's talk." text="Support channels will be published before the pilot opens."/>}/><Route path="/terms" element={<InfoPage title="Terms of use" text="Draft terms will be reviewed before any public transactions are enabled."/>}/><Route path="/privacy" element={<InfoPage title="Privacy matters." text="A complete privacy notice will be published before collecting account or personal data."/>}/><Route path="/safety" element={<InfoPage title="Trust is part of the product." text="Verification, handover evidence, dispute handling and clear policies are being designed before launch."/>}/><Route path="*" element={<InfoPage title="Page not found" text="The page you're looking for doesn't exist."/>}/></Routes><Footer/></>
+}
