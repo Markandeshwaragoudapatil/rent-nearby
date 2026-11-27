@@ -45,7 +45,7 @@ export default function AdminPage() {
         ? "/admin/owner-applications/" + id + "/decision"
         : "/admin/products/" + id + "/decision"
       await apiRequest(path, { method: "PATCH", body: { decision, note } })
-      setNotice((type === "owner" ? "Owner application" : "Listing") + " " + decision.toLowerCase() + "d.")
+      setNotice((type === "owner" ? "Owner application" : "Listing") + " " + (decision === "APPROVE" ? "approved." : "rejected."))
       await loadQueues()
     } catch (requestError) {
       setError(requestError.message || "The moderation action failed.")
@@ -72,7 +72,7 @@ export default function AdminPage() {
             <article className="admin-card" key={item.id}>
               <div className="admin-card-heading"><div><span className="eyebrow">OWNER APPLICATION</span><h3>{item.business_name}</h3></div><span className="status-pill">{item.status}</span></div>
               <p>{item.description}</p>
-              <div className="admin-meta"><span>{item.city}</span><span>{item.contact_phone}</span><span>User {item.user_id}</span></div>
+              <div className="admin-meta"><span>{item.applicant_name}</span><span>{item.applicant_email}</span><span>{item.city}</span><span>{item.contact_phone}</span></div>
               <label className="admin-note">Decision note<input value={notes[item.id] || ""} onChange={event => setNotes(current => ({ ...current, [item.id]: event.target.value }))} placeholder="Required when rejecting" maxLength={500}/></label>
               <div className="admin-actions">
                 <button className="button button-dark" onClick={() => decide("owner", item.id, "APPROVE")} disabled={working === "owner:" + item.id}><Check size={15}/> Approve owner</button>
