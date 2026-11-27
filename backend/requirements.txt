@@ -6,5 +6,6 @@ Flask-WTF>=1.2,<2
 Flask-Cors>=5,<7
 argon2-cffi>=25,<26
 psycopg[binary]>=3.2,<4
+python-dotenv>=1,<2
 gunicorn>=23,<24
 pytest>=8.3,<9
