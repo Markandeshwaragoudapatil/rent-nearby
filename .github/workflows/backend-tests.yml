@@ -13,6 +13,10 @@ on:
       - "backend/**"
       - ".github/workflows/backend-tests.yml"
 
+concurrency:
+  group: backend-checks-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -52,6 +56,6 @@ jobs:
         run: flask --app run.py db upgrade
       - name: Verify booking exclusion constraint exists
         run: |
-          python -c "import os, psycopg; c=psycopg.connect(os.environ['DATABASE_URL']); r=c.execute(\"SELECT 1 FROM pg_constraint WHERE conname='ex_bookings_no_overlapping_reservations'\").fetchone(); assert r, 'booking exclusion constraint missing'; print('Booking exclusion constraint is installed')"
+          python -c "import os, psycopg; dsn=os.environ['DATABASE_URL'].replace('postgresql+psycopg://','postgresql://',1); c=psycopg.connect(dsn); r=c.execute(\"SELECT 1 FROM pg_constraint WHERE conname='ex_bookings_no_overlapping_reservations'\").fetchone(); assert r, 'booking exclusion constraint missing'; print('Booking exclusion constraint is installed')"
       - name: Run backend tests
         run: pytest -q
