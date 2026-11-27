@@ -5,6 +5,8 @@ import RequireAuth from "./components/RequireAuth"
 import Home from "./pages/Home"
 import { Browse, ProductDetail, InfoPage } from "./pages/BasicPages"
 import { AccountPage, LoginPage, OwnerPage, RegisterPage } from "./pages/AuthPages"
+import OwnerApplicationPage from "./pages/OwnerApplicationPage"
+import AdminPage from "./pages/AdminPage"
 
 export default function App() {
   return <>
@@ -17,11 +19,14 @@ export default function App() {
       <Route path="/register" element={<RegisterPage/>}/>
       <Route element={<RequireAuth/>}>
         <Route path="/account" element={<AccountPage/>}/>
+        <Route path="/list-item" element={<OwnerApplicationPage/>}/>
       </Route>
       <Route element={<RequireAuth roles={["OWNER"]}/>}>
         <Route path="/owner" element={<OwnerPage/>}/>
       </Route>
-      <Route path="/list-item" element={<InfoPage title="Your things can go places." text="Owner onboarding is not open yet. Owner accounts are provisioned through a trusted verification process; public registration cannot grant owner permissions."/>}/>
+      <Route element={<RequireAuth roles={["ADMIN"]}/>}>
+        <Route path="/admin" element={<AdminPage/>}/>
+      </Route>
       <Route path="/about" element={<InfoPage title="A more useful way to share." text="RentNearby is building a neighbourhood-first rental marketplace, starting in Bengaluru."/>}/>
       <Route path="/contact" element={<InfoPage title="Let's talk." text="Support channels will be published before the pilot opens."/>}/>
       <Route path="/terms" element={<InfoPage title="Terms of use" text="Draft terms will be reviewed before any public transactions are enabled."/>}/>
