@@ -1,10 +1,12 @@
 from flask import Blueprint, abort, g, jsonify, request
 from sqlalchemy import select
+
 from ..extensions import db
-from ..models import Category, Product, RentalPricing
-from ..security import roles_required
+from ..models import Category, OwnerApplication, Product, RentalPricing
+from ..security import login_required, roles_required
 
 owner_bp = Blueprint("owner", __name__)
+
 
 def payload():
     data = request.get_json(silent=True)
@@ -12,11 +14,64 @@ def payload():
         abort(400, description="A JSON object is required.")
     return data
 
+
+@owner_bp.post("/application")
+@login_required
+def submit_owner_application():
+    if g.current_user.role == "ADMIN":
+        abort(409, description="Administrator accounts cannot apply for owner access.")
+    if g.current_user.role == "OWNER":
+        abort(409, description="This account already has owner access.")
+    data = payload()
+    business_name = str(data.get("business_name", "")).strip()
+    description = str(data.get("description", "")).strip()
+    contact_phone = str(data.get("contact_phone", "")).strip()
+    city = str(data.get("city", "Bengaluru")).strip()
+    errors = {}
+    if not business_name or len(business_name) > 120:
+        errors["business_name"] = "Enter a name up to 120 characters."
+    if len(description) < 30 or len(description) > 1500:
+        errors["description"] = "Describe what you plan to rent out (30–1500 characters)."
+    digits = "".join(character for character in contact_phone if character.isdigit())
+    if not 10 <= len(digits) <= 15:
+        errors["contact_phone"] = "Enter a valid contact number."
+    if not city or len(city) > 100:
+        errors["city"] = "Enter a valid city."
+    if errors:
+        return jsonify({"error": {"code": "VALIDATION_ERROR", "message": "Check the application details.", "fields": errors}}), 422
+
+    application = db.session.scalar(select(OwnerApplication).where(OwnerApplication.user_id == g.current_user.id))
+    if application and application.status in {"PENDING", "APPROVED"}:
+        abort(409, description="An active or approved owner application already exists.")
+    if application:
+        application.business_name = business_name
+        application.description = description
+        application.contact_phone = contact_phone
+        application.city = city
+        application.status = "PENDING"
+        application.decision_note = None
+        application.reviewed_by = None
+        application.reviewed_at = None
+    else:
+        application = OwnerApplication(user_id=g.current_user.id, business_name=business_name, description=description, contact_phone=contact_phone, city=city)
+        db.session.add(application)
+    db.session.commit()
+    return jsonify({"application": application.to_dict()}), 201
+
+
+@owner_bp.get("/application")
+@login_required
+def get_owner_application():
+    application = db.session.scalar(select(OwnerApplication).where(OwnerApplication.user_id == g.current_user.id))
+    return jsonify({"application": application.to_dict() if application else None})
+
+
 @owner_bp.get("/products")
 @roles_required("OWNER")
 def list_products():
     rows = db.session.scalars(select(Product).where(Product.owner_id == g.current_user.id).order_by(Product.created_at.desc())).all()
     return jsonify({"items": [{"id": str(p.id), "title": p.title, "status": p.status, "locality": p.locality} for p in rows]})
+
 
 @owner_bp.post("/products")
 @roles_required("OWNER")
@@ -44,12 +99,12 @@ def create_product():
     locality = str(data["locality"]).strip()
     if len(locality) > 120:
         abort(422, description="Locality is too long.")
-    product = Product(owner_id=g.current_user.id, category_id=category.id, title=data["title"].strip(),
-                      description=data["description"].strip(), condition=data["condition"], locality=locality, status="DRAFT")
+    product = Product(owner_id=g.current_user.id, category_id=category.id, title=data["title"].strip(), description=data["description"].strip(), condition=data["condition"], locality=locality, status="DRAFT")
     product.pricing = RentalPricing(hourly_price_paise=hourly, daily_price_paise=daily, deposit_paise=deposit)
     db.session.add(product)
     db.session.commit()
     return jsonify({"product": {"id": str(product.id), "status": product.status}}), 201
+
 
 @owner_bp.post("/products/<uuid:product_id>/submit")
 @roles_required("OWNER")
