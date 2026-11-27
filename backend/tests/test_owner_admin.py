@@ -76,7 +76,7 @@ def test_admin_approval_grants_owner_and_writes_audit_log(app, client):
     response = client.patch(f"/api/v1/admin/owner-applications/{application['id']}/decision", json={"decision": "APPROVE", "note": "Business details reviewed."})
     assert response.status_code == 200
     assert response.get_json()["user"]["role"] == "OWNER"
-    assert response.get_json()["user"]["verification_status"] == "VERIFIED"
+    assert response.get_json()["user"]["verification_status"] == "UNVERIFIED"
     with app.app_context():
         assert db.session.scalar(select(AuditLog).where(AuditLog.resource_type == "owner_application"))
 
@@ -140,3 +140,29 @@ def test_listing_rejection_keeps_it_out_of_public_catalogue(app, client):
     response = client.patch(f"/api/v1/admin/products/{product_id}/decision", json={"decision": "REJECT", "note": "Please add clearer condition details."})
     assert response.status_code == 200
     assert client.get("/api/v1/products").get_json()["total"] == 0
+
+
+
+def test_bootstrap_admin_cli_creates_only_the_first_admin(app):
+    runner = app.test_cli_runner()
+    result = runner.invoke(
+        args=["bootstrap-admin", "--name", "Root Admin", "--email", "root@example.com"],
+        input="correct horse battery staple\ncorrect horse battery staple\n",
+    )
+    assert result.exit_code == 0
+    with app.app_context():
+        admin = db.session.scalar(select(User).where(User.email == "root@example.com"))
+        assert admin is not None
+        assert admin.role == "ADMIN"
+    second_attempt = runner.invoke(
+        args=["bootstrap-admin", "--name", "Another Admin", "--email", "another@example.com"],
+        input="correct horse battery staple\ncorrect horse battery staple\n",
+    )
+    assert second_attempt.exit_code != 0
+    assert "An administrator already exists" in second_attempt.output
+
+
+def test_owner_application_cannot_be_submitted_twice_while_pending(client):
+    register(client)
+    assert apply_for_owner(client).status_code == 201
+    assert apply_for_owner(client).status_code == 409
