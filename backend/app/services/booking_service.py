@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta, timezone
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from ..extensions import db
 from ..models import AvailabilityBlock, Booking, BookingEvent, Product
@@ -104,10 +104,13 @@ def request_booking(renter, product_id, start_date, end_date, idempotency_key=No
     return booking, True
 
 def decide_booking(owner, booking_id, accept):
+    initial = db.session.get(Booking, booking_id)
+    if initial is None:
+        raise BookingRuleError("Booking not found.", 404)
+    product = db.session.scalar(select(Product).where(Product.id == initial.product_id).with_for_update())
     booking = db.session.scalar(select(Booking).where(Booking.id == booking_id).with_for_update())
     if booking is None:
         raise BookingRuleError("Booking not found.", 404)
-    product = db.session.scalar(select(Product).where(Product.id == booking.product_id).with_for_update())
     if product.owner_id != owner.id:
         raise BookingRuleError("You are not allowed to manage this booking.", 403)
     if booking.status != "PENDING":
@@ -134,6 +137,10 @@ def decide_booking(owner, booking_id, accept):
     return booking
 
 def cancel_booking(renter, booking_id):
+    initial = db.session.get(Booking, booking_id)
+    if initial is None:
+        raise BookingRuleError("Booking not found.", 404)
+    db.session.scalar(select(Product.id).where(Product.id == initial.product_id).with_for_update())
     booking = db.session.scalar(select(Booking).where(Booking.id == booking_id).with_for_update())
     if booking is None:
         raise BookingRuleError("Booking not found.", 404)
