@@ -6,9 +6,10 @@ import ProductCard from "../components/ProductCard"
 import { fetchProduct, fetchProducts } from "../services/products"
 
 function filterDemoProducts(query, category, locality) {
+  const categoryTerm = ({ "tools-equipment": "tools", "event-equipment": "event equipment" })[category] || category
   return demoProducts.filter(product =>
     (!query || `${product.name} ${product.category} ${product.location}`.toLowerCase().includes(query.toLowerCase())) &&
-    (!category || product.category.toLowerCase().includes(category.toLowerCase()) || category.toLowerCase().includes(product.category.toLowerCase())) &&
+    (!categoryTerm || product.category.toLowerCase().includes(categoryTerm.toLowerCase()) || categoryTerm.toLowerCase().includes(product.category.toLowerCase())) &&
     (!locality || product.location.toLowerCase().includes(locality.toLowerCase()))
   )
 }
