@@ -34,9 +34,15 @@ Keep the session cookie and send the token as `X-CSRFToken`. The React API clien
 | POST | `/auth/login` | Public + rate limit + CSRF | Create session |
 | POST | `/auth/logout` | Authenticated + CSRF | Clear session |
 | GET | `/auth/me` | Authenticated | Current user |
+| POST | `/owner/application` | Authenticated RENTER | Apply for owner access; does not grant the role immediately |
+| GET | `/owner/application` | Authenticated | Read own owner application status |
 | GET | `/owner/products` | OWNER | List own products |
 | POST | `/owner/products` | OWNER | Create a DRAFT listing |
 | POST | `/owner/products/{id}/submit` | OWNER | Submit a complete listing for moderation |
+| GET | `/admin/owner-applications?status=PENDING` | ADMIN | List owner applications for review (`ALL`, `APPROVED`, `REJECTED` also supported) |
+| PATCH | `/admin/owner-applications/{id}/decision` | ADMIN | Approve or reject an owner application |
+| GET | `/admin/products/pending` | ADMIN | List submitted listings awaiting review |
+| PATCH | `/admin/products/{id}/decision` | ADMIN | Approve or reject a listing |
 | POST | `/bookings` | RENTER | Create a booking request |
 | GET | `/bookings` | RENTER | List own booking requests |
 | GET | `/bookings/{id}` | Booking participant or ADMIN | Read booking detail |
@@ -58,6 +64,14 @@ Keep the session cookie and send the token as `X-CSRFToken`. The React API clien
 ```
 
 The server always assigns `RENTER`. Never send a role field or expect public registration to grant owner/admin permissions.
+
+### Owner onboarding
+
+A signed-in renter submits `POST /owner/application` with `business_name`, a 30–1500 character `description`, `contact_phone`, and `city`. The account remains a RENTER while the application is `PENDING`. Only an ADMIN can approve it; approval changes the account role to OWNER and sets `verification_status` to VERIFIED. A rejected application can be resubmitted after correcting the details. The MVP does not request Aadhaar or identity-document uploads.
+
+Reject decisions require a reason. Admin decisions are written to `audit_logs`. The first administrator must be provisioned from a trusted server terminal after migrations: `flask --app run.py bootstrap-admin`. The command prompts for the name, email, and a hidden password; it refuses to run once an administrator exists. Do not expose this command as a public API.
+
+An owner submits a completed draft using `POST /owner/products/{id}/submit`. The listing remains hidden until an administrator approves it, which changes its status to `ACTIVE`. Rejected listings can be corrected and resubmitted.
 
 ### Create booking request
 
@@ -111,7 +125,7 @@ Common status codes: 400 malformed request/CSRF, 401 unauthenticated, 403 forbid
 - Profile and address management
 - Email/phone verification and password reset
 - Product image uploads (Cloudinary)
-- Admin moderation and category management
+- Admin category management
 - Razorpay order creation, payment signature verification and webhooks
 - Transition from accepted/payment-pending to confirmed after verified payment
 - Handover, return, damage evidence, reviews and disputes APIs
