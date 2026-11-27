@@ -9,6 +9,7 @@ class Booking(db.Model):
     __table_args__ = (
         CheckConstraint("start_date < end_date", name="ck_booking_valid_dates"),
         CheckConstraint("rental_paise >= 0 AND deposit_paise >= 0 AND fee_paise >= 0 AND total_paise >= 0", name="ck_booking_amounts_nonnegative"),
+        CheckConstraint("status IN ('PENDING','ACCEPTED','REJECTED','PAYMENT_PENDING','CONFIRMED','ACTIVE','COMPLETED','CANCELLED','DISPUTED')", name="ck_booking_status"),
         Index("ix_bookings_product_dates", "product_id", "start_date", "end_date"),
     )
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -22,6 +23,7 @@ class Booking(db.Model):
     total_paise: Mapped[int] = mapped_column(BigInteger, nullable=False)
     status: Mapped[str] = mapped_column(String(24), default="PENDING", nullable=False)
     idempotency_key: Mapped[str | None] = mapped_column(String(100), unique=True)
+    payment_deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
 class Payment(db.Model):
