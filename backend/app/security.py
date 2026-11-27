@@ -1,3 +1,4 @@
+import uuid
 from functools import wraps
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
@@ -23,9 +24,10 @@ def current_user():
     if not user_id:
         return None
     try:
-        return db.session.get(User, user_id)
-    except (ValueError, TypeError):
+        parsed_id = uuid.UUID(str(user_id))
+    except (ValueError, TypeError, AttributeError):
         return None
+    return db.session.get(User, parsed_id)
 
 def login_required(view):
     @wraps(view)
