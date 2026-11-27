@@ -67,7 +67,7 @@ The server always assigns `RENTER`. Never send a role field or expect public reg
 
 ### Owner onboarding
 
-A signed-in renter submits `POST /owner/application` with `business_name`, a 30–1500 character `description`, `contact_phone`, and `city`. The account remains a RENTER while the application is `PENDING`. Only an ADMIN can approve it; approval changes the account role to OWNER and sets `verification_status` to VERIFIED. A rejected application can be resubmitted after correcting the details. The MVP does not request Aadhaar or identity-document uploads.
+A signed-in renter submits `POST /owner/application` with `business_name`, a 30–1500 character `description`, `contact_phone`, and `city`. The account remains a RENTER while the application is `PENDING`. Only an ADMIN can approve it; approval changes the account role to OWNER. Identity verification remains a separate process and is not implied by owner-role approval. A rejected application can be resubmitted after correcting the details. The MVP does not request Aadhaar or identity-document uploads.
 
 Reject decisions require a reason. Admin decisions are written to `audit_logs`. The first administrator must be provisioned from a trusted server terminal after migrations: `flask --app run.py bootstrap-admin`. The command prompts for the name, email, and a hidden password; it refuses to run once an administrator exists. Do not expose this command as a public API.
 
