@@ -67,7 +67,7 @@ export default function Home() {
       <section className="section categories-section" id="categories">
         <div className="page-shell">
           <div className="section-heading"><div><span className="eyebrow">A LITTLE OF EVERYTHING</span><h2>What do you need<br/>for <em>today?</em></h2></div><a href="/browse" className="round-link">Explore all items <ArrowUpRight size={17}/></a></div>
-          <div className="category-grid">{categories.map((category, index) => { const Icon = categoryIcons[category.icon]; return <a className={`category-card category-${category.color}`} href={`/browse?category=${encodeURIComponent(category.name)}`} key={category.name}><div className="category-number">0{index + 1}</div><div className="category-icon"><Icon size={27} strokeWidth={1.6}/></div><div><h3>{category.name}</h3><p>{category.count}</p></div><span className="category-arrow"><ArrowUpRight size={19}/></span></a> })}</div>
+          <div className="category-grid">{categories.map((category, index) => { const Icon = categoryIcons[category.icon]; return <a className={`category-card category-${category.color}`} href={`/browse?category=${encodeURIComponent(category.slug)}`} key={category.name}><div className="category-number">0{index + 1}</div><div className="category-icon"><Icon size={27} strokeWidth={1.6}/></div><div><h3>{category.name}</h3><p>{category.count}</p></div><span className="category-arrow"><ArrowUpRight size={19}/></span></a> })}</div>
         </div>
       </section>
 
