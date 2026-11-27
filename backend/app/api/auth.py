@@ -27,7 +27,7 @@ def register():
     password = data.get("password", "")
     if not name or len(name) > 100:
         abort(422, description="Name is required and must be at most 100 characters.")
-    if not re.fullmatch(r"[^\\s@]+@[^\\s@]+\\.[^\\s@]+", email) or len(email) > 255:
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email) or len(email) > 255:
         abort(422, description="Enter a valid email address.")
     if db.session.scalar(select(User.id).where(func.lower(User.email) == email)):
         abort(409, description="An account with this email already exists.")
