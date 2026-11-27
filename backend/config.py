@@ -15,9 +15,9 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
     WTF_CSRF_ENABLED = True
-    WTF_CSRF_CHECK_DEFAULT = False
     CORS_ORIGINS = [os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")]
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://")
+    PERMANENT_SESSION_LIFETIME = 60 * 60 * 24 * 7
 
 class TestingConfig(Config):
     TESTING = True
