@@ -14,6 +14,7 @@ A Bengaluru-first peer-to-peer rental marketplace connecting people who own usef
 - [x] Availability blocks and booking request/accept/reject workflow
 - [x] PostgreSQL exclusion constraint preventing overlapping reserved rentals
 - [x] React renter registration/login connected to Flask sessions
+- [x] Public browse and product-detail pages connected to the live catalogue API, with an explicitly labelled demo fallback
 - [x] Backend and frontend GitHub Actions checks
 - [ ] Admin moderation and owner verification workflows
 - [ ] Cloudinary product image uploads
