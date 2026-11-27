@@ -36,6 +36,7 @@ export default function Header() {
           <Link to="/list-item" className="nav-owner" onClick={closeMenu}>List your item <ArrowUpRight size={15}/></Link>
           {user ? <>
             {user.role === "OWNER" && <Link to="/owner" className="nav-login" onClick={closeMenu}>Owner workspace</Link>}
+            {user.role === "ADMIN" && <Link to="/admin" className="nav-login" onClick={closeMenu}>Admin workspace</Link>}
             <Link to="/account" className="nav-login" onClick={closeMenu}>My account</Link>
             <button type="button" className="nav-logout" onClick={handleLogout}>Log out</button>
           </> : <>
