@@ -82,6 +82,12 @@ def request_booking(renter, product_id, start_date, end_date, idempotency_key=No
                 raise BookingRuleError("This idempotency key has already been used.", 409)
             return existing, False
     product = db.session.scalar(select(Product).where(Product.id == product_id).with_for_update())
+    if idempotency_key:
+        existing = db.session.scalar(select(Booking).where(Booking.idempotency_key == idempotency_key))
+        if existing:
+            if existing.renter_id != renter.id:
+                raise BookingRuleError("This idempotency key has already been used.", 409)
+            return existing, False
     if product is None or product.status != "ACTIVE":
         raise BookingRuleError("Product not found or not available for rent.", 404)
     if product.owner_id == renter.id:
@@ -100,7 +106,15 @@ def request_booking(renter, product_id, start_date, end_date, idempotency_key=No
     db.session.add(booking)
     db.session.flush()
     db.session.add(BookingEvent(booking_id=booking.id, actor_id=renter.id, from_status=None, to_status="PENDING"))
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError as error:
+        db.session.rollback()
+        if idempotency_key:
+            existing = db.session.scalar(select(Booking).where(Booking.idempotency_key == idempotency_key))
+            if existing and existing.renter_id == renter.id:
+                return existing, False
+        raise BookingRuleError("The booking could not be created because a conflicting request was submitted.") from error
     return booking, True
 
 def decide_booking(owner, booking_id, accept):
