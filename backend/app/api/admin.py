@@ -81,7 +81,6 @@ def decide_owner_application(application_id):
     application.reviewed_at = datetime.now(timezone.utc)
     if decision == "APPROVE":
         user.role = "OWNER"
-        user.verification_status = "VERIFIED"
     _audit(f"OWNER_APPLICATION_{decision}D", "owner_application", application.id, {
         "user_id": str(user.id), "from_status": previous, "to_status": application.status, "note": note,
     })
