@@ -1,5 +1,4 @@
 from datetime import date, timedelta
-import uuid
 
 from app.extensions import db
 from app.models import Category, Product, RentalPricing, User
@@ -24,26 +23,24 @@ def make_product(owner):
     db.session.commit()
     return product
 
-def sign_in(client, user):
+def sign_in(client, user_id):
     with client.session_transaction() as session:
-        session["user_id"] = str(user.id)
+        session["user_id"] = str(user_id)
 
 def setup_marketplace(app):
     with app.app_context():
         owner = make_user("owner@example.com", "OWNER")
         renter = make_user("renter@example.com", "RENTER")
         product = make_product(owner)
-        return owner.id, renter.id, product.id
+        return str(owner.id), str(renter.id), str(product.id)
 
 def test_booking_request_calculates_server_side_total(app, client):
     owner_id, renter_id, product_id = setup_marketplace(app)
-    with app.app_context():
-        renter = db.session.get(User, renter_id)
-        sign_in(client, renter)
+    sign_in(client, renter_id)
     start = date.today() + timedelta(days=2)
     end = start + timedelta(days=3)
     response = client.post("/api/v1/bookings", json={
-        "product_id": str(product_id), "start_date": start.isoformat(), "end_date": end.isoformat(),
+        "product_id": product_id, "start_date": start.isoformat(), "end_date": end.isoformat(),
         "rental_paise": 1, "deposit_paise": 1, "total_paise": 1
     })
     assert response.status_code == 201
@@ -56,23 +53,20 @@ def test_booking_request_calculates_server_side_total(app, client):
 def test_only_one_overlapping_pending_request_can_be_accepted(app, client):
     owner_id, renter_id, product_id = setup_marketplace(app)
     with app.app_context():
-        owner = db.session.get(User, owner_id)
-        renter = db.session.get(User, renter_id)
         second_renter = make_user("second@example.com", "RENTER")
-        second_renter_id = second_renter.id
-        sign_in(client, renter)
+        second_renter_id = str(second_renter.id)
+        db.session.commit()
+    sign_in(client, renter_id)
     start = date.today() + timedelta(days=5)
     end = start + timedelta(days=2)
     first = client.post("/api/v1/bookings", json={
-        "product_id": str(product_id), "start_date": start.isoformat(), "end_date": end.isoformat()
+        "product_id": product_id, "start_date": start.isoformat(), "end_date": end.isoformat()
     }).get_json()["booking"]
-    with client.session_transaction() as session:
-        session["user_id"] = str(second_renter_id)
+    sign_in(client, second_renter_id)
     second = client.post("/api/v1/bookings", json={
-        "product_id": str(product_id), "start_date": start.isoformat(), "end_date": end.isoformat()
+        "product_id": product_id, "start_date": start.isoformat(), "end_date": end.isoformat()
     }).get_json()["booking"]
-    with client.session_transaction() as session:
-        session["user_id"] = str(owner_id)
+    sign_in(client, owner_id)
     accepted = client.post(f"/api/v1/owner/bookings/{first['id']}/accept")
     rejected_by_conflict = client.post(f"/api/v1/owner/bookings/{second['id']}/accept")
     assert accepted.status_code == 200
@@ -81,32 +75,26 @@ def test_only_one_overlapping_pending_request_can_be_accepted(app, client):
 
 def test_adjacent_date_ranges_do_not_overlap(app, client):
     owner_id, renter_id, product_id = setup_marketplace(app)
-    with app.app_context():
-        renter = db.session.get(User, renter_id)
-        sign_in(client, renter)
+    sign_in(client, renter_id)
     start = date.today() + timedelta(days=10)
     middle = start + timedelta(days=2)
     end = middle + timedelta(days=2)
     first = client.post("/api/v1/bookings", json={
-        "product_id": str(product_id), "start_date": start.isoformat(), "end_date": middle.isoformat()
+        "product_id": product_id, "start_date": start.isoformat(), "end_date": middle.isoformat()
     }).get_json()["booking"]
-    with client.session_transaction() as session:
-        session["user_id"] = str(owner_id)
+    sign_in(client, owner_id)
     assert client.post(f"/api/v1/owner/bookings/{first['id']}/accept").status_code == 200
-    with client.session_transaction() as session:
-        session["user_id"] = str(renter_id)
+    sign_in(client, renter_id)
     second_response = client.post("/api/v1/bookings", json={
-        "product_id": str(product_id), "start_date": middle.isoformat(), "end_date": end.isoformat()
+        "product_id": product_id, "start_date": middle.isoformat(), "end_date": end.isoformat()
     })
     assert second_response.status_code == 201
 
 def test_booking_idempotency_key_prevents_duplicate_requests(app, client):
     owner_id, renter_id, product_id = setup_marketplace(app)
-    with app.app_context():
-        renter = db.session.get(User, renter_id)
-        sign_in(client, renter)
+    sign_in(client, renter_id)
     start = date.today() + timedelta(days=15)
-    payload = {"product_id": str(product_id), "start_date": start.isoformat(), "end_date": (start + timedelta(days=1)).isoformat()}
+    payload = {"product_id": product_id, "start_date": start.isoformat(), "end_date": (start + timedelta(days=1)).isoformat()}
     first = client.post("/api/v1/bookings", json=payload, headers={"Idempotency-Key": "rentnearby-test-key"})
     second = client.post("/api/v1/bookings", json=payload, headers={"Idempotency-Key": "rentnearby-test-key"})
     assert first.status_code == 201
