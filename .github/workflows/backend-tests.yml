@@ -36,7 +36,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://rentnearby:rentnearby_test@localhost:5432/rentnearby_test
       SECRET_KEY: ci-only-not-a-production-secret
-      FLASK_ENV: production
+      FLASK_ENV: development
       SESSION_COOKIE_SECURE: "false"
       FRONTEND_ORIGIN: http://localhost:5173
       RATELIMIT_STORAGE_URI: memory://
