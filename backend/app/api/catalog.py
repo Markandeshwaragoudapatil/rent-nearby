@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, jsonify, request
+from flask import Blueprint, jsonify, request, abort
 from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload, selectinload
 from ..extensions import db
@@ -18,9 +18,9 @@ def products():
     locality = request.args.get("locality", "").strip()
     category = request.args.get("category", "").strip()
     if search:
-        query = query.where(Product.title.ilike(f"%{search}%"))
+        query = query.where(Product.title.ilike("%" + search.replace("%", "\\%").replace("_", "\\_") + "%"))
     if locality:
-        query = query.where(Product.locality.ilike(f"%{locality}%"))
+        query = query.where(Product.locality.ilike("%" + locality + "%"))
     if category:
         query = query.join(Product.category).where(Category.slug == category)
     try:
