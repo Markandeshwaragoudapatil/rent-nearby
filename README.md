@@ -16,7 +16,7 @@ A Bengaluru-first peer-to-peer rental marketplace connecting people who own usef
 - [x] React renter registration/login connected to Flask sessions
 - [x] Public browse and product-detail pages connected to the live catalogue API, with an explicitly labelled demo fallback
 - [x] Backend and frontend GitHub Actions checks
-- [ ] Admin moderation and owner verification workflows
+- [x] Owner application, admin approval and listing moderation APIs with audit logs
 - [ ] Cloudinary product image uploads
 - [ ] Razorpay test-mode order creation, verification and signed webhooks
 - [ ] Payment-confirmed booking, handover, return and dispute workflows
@@ -91,6 +91,16 @@ npm run build
 
 GitHub Actions runs backend tests against PostgreSQL 16, verifies the exclusion constraint, and runs frontend tests/build on relevant pull requests and feature branch pushes.
 
+## Admin bootstrap
+
+After applying migrations, provision the first administrator from a trusted backend terminal:
+
+```bash
+flask --app run.py bootstrap-admin
+```
+
+The command prompts for the administrator details and a hidden password. It refuses to create another administrator after the first one exists. Public registration cannot grant ADMIN or OWNER roles.
+
 ## Booking integrity
 
 Rental dates use half-open ranges: `[start_date, end_date)`. The PostgreSQL partial GiST exclusion constraint prevents overlapping `ACCEPTED`, `PAYMENT_PENDING`, `CONFIRMED` and `ACTIVE` bookings for the same product. Owners' accepted requests have a 30-minute payment hold; schedule the backend command `flask --app run.py expire-booking-holds` every five minutes.
@@ -108,8 +118,7 @@ Rental dates use half-open ranges: `[start_date, end_date)`. The PostgreSQL part
 
 ## Next milestones
 
-1. Admin moderation and trusted owner onboarding.
-2. Complete product editing and image uploads.
+1. Complete product editing and image uploads.
 3. Razorpay test integration with idempotent webhooks.
 4. Payment-confirmed booking transitions and return/handover workflow.
 5. End-to-end tests, deployment hardening and pilot readiness.
