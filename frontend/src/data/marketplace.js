@@ -7,7 +7,7 @@ export const demoProducts = [
 ]
 
 export const categories = [
-  { name: 'Electronics', count: 'Cameras, audio & more', icon: 'camera', color: 'sage' },
-  { name: 'Tools', count: 'Make, fix & build', icon: 'wrench', color: 'sand' },
-  { name: 'Event equipment', count: 'Set the scene', icon: 'party', color: 'lavender' },
+  { name: 'Electronics', slug: 'electronics', count: 'Cameras, audio & more', icon: 'camera', color: 'sage' },
+  { name: 'Tools', slug: 'tools-equipment', count: 'Make, fix & build', icon: 'wrench', color: 'sand' },
+  { name: 'Event equipment', slug: 'event-equipment', count: 'Set the scene', icon: 'party', color: 'lavender' },
 ]

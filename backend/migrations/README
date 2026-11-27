@@ -1,0 +1,12 @@
+RentNearby database migrations.
+
+Run from the backend directory:
+
+    flask --app run.py db upgrade
+
+Create a new migration after changing SQLAlchemy models:
+
+    flask --app run.py db migrate -m "Describe the schema change"
+    flask --app run.py db upgrade
+
+The initial migration includes the PostgreSQL btree_gist extension and a partial GiST exclusion constraint that prevents overlapping reserved date ranges for a product. Run migrations against PostgreSQL; SQLite is intended only for fast unit tests and does not enforce that exclusion constraint.

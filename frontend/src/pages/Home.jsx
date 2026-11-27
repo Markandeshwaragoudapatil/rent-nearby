@@ -1,16 +1,43 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowRight, ArrowUpRight, Camera, Drill, Headphones, MapPin, Search, ShieldCheck, Sparkles, Clock3, Handshake, PackageCheck } from 'lucide-react'
-import { categories, demoProducts } from '../data/marketplace'
-import ProductCard from '../components/ProductCard'
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { ArrowRight, ArrowUpRight, Camera, Drill, Headphones, MapPin, Search, ShieldCheck, Sparkles, Clock3, Handshake, PackageCheck } from "lucide-react"
+import { categories, demoProducts } from "../data/marketplace"
+import ProductCard from "../components/ProductCard"
+import { fetchProducts } from "../services/products"
 
 const categoryIcons = { camera: Camera, wrench: Drill, party: Headphones }
 
 export default function Home() {
-  const [query, setQuery] = useState('')
-  const [location, setLocation] = useState('Bengaluru')
+  const [query, setQuery] = useState("")
+  const [location, setLocation] = useState("Bengaluru")
+  const [featured, setFeatured] = useState([])
+  const [loadingFeatured, setLoadingFeatured] = useState(true)
+  const [apiUnavailable, setApiUnavailable] = useState(false)
   const navigate = useNavigate()
-  const search = (event) => { event.preventDefault(); navigate(`/browse?q=${encodeURIComponent(query)}&location=${encodeURIComponent(location)}`) }
+
+  useEffect(() => {
+    let active = true
+    fetchProducts({ perPage: 4 })
+      .then(result => {
+        if (active) {
+          setFeatured(result.items)
+          setApiUnavailable(false)
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setFeatured(demoProducts)
+          setApiUnavailable(true)
+        }
+      })
+      .finally(() => { if (active) setLoadingFeatured(false) })
+    return () => { active = false }
+  }, [])
+
+  const search = event => {
+    event.preventDefault()
+    navigate(`/browse?q=${encodeURIComponent(query)}&locality=${encodeURIComponent(location === "Bengaluru" ? "" : location)}`)
+  }
 
   return (
     <main>
@@ -21,9 +48,9 @@ export default function Home() {
             <h1>Don't buy it.<br/><span>Rent it.</span></h1>
             <p className="hero-description">The things you need, from the people around you. Save money, make more of what you own.</p>
             <form className="search-panel" onSubmit={search}>
-              <label className="search-field"><Search size={19}/><span><small>What are you looking for?</small><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Camera, drill, projector..." aria-label="What are you looking for?" /></span></label>
+              <label className="search-field"><Search size={19}/><span><small>What are you looking for?</small><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Camera, drill, projector..." aria-label="What are you looking for?"/></span></label>
               <span className="search-divider"/>
-              <label className="search-field location-field"><MapPin size={19}/><span><small>Where?</small><input value={location} onChange={e => setLocation(e.target.value)} aria-label="Location" /></span></label>
+              <label className="search-field location-field"><MapPin size={19}/><span><small>Where?</small><input value={location} onChange={event => setLocation(event.target.value)} aria-label="Location"/></span></label>
               <button className="search-submit" type="submit" aria-label="Search"><ArrowRight size={21}/></button>
             </form>
             <div className="hero-note"><span className="avatar-stack"><i>R</i><i>A</i><i>K</i></span><span>Local finds. Real people. Less waste.</span></div>
@@ -40,14 +67,16 @@ export default function Home() {
       <section className="section categories-section" id="categories">
         <div className="page-shell">
           <div className="section-heading"><div><span className="eyebrow">A LITTLE OF EVERYTHING</span><h2>What do you need<br/>for <em>today?</em></h2></div><a href="/browse" className="round-link">Explore all items <ArrowUpRight size={17}/></a></div>
-          <div className="category-grid">{categories.map((category, index) => { const Icon = categoryIcons[category.icon]; return <a className={`category-card category-${category.color}`} href={`/browse?category=${encodeURIComponent(category.name)}`} key={category.name}><div className="category-number">0{index + 1}</div><div className="category-icon"><Icon size={27} strokeWidth={1.6}/></div><div><h3>{category.name}</h3><p>{category.count}</p></div><span className="category-arrow"><ArrowUpRight size={19}/></span></a> })}</div>
+          <div className="category-grid">{categories.map((category, index) => { const Icon = categoryIcons[category.icon]; return <a className={`category-card category-${category.color}`} href={`/browse?category=${encodeURIComponent(category.slug)}`} key={category.name}><div className="category-number">0{index + 1}</div><div className="category-icon"><Icon size={27} strokeWidth={1.6}/></div><div><h3>{category.name}</h3><p>{category.count}</p></div><span className="category-arrow"><ArrowUpRight size={19}/></span></a> })}</div>
         </div>
       </section>
 
       <section className="section featured-section">
-        <div className="page-shell"><div className="section-heading featured-heading"><div><span className="eyebrow">GOOD FINDS, CLOSE BY</span><h2>Popular around<br/><em>your corner.</em></h2></div><p className="section-intro">A peek at the kind of things you could find nearby. Listings shown here are illustrative while we prepare the marketplace.</p></div>
-          <div className="demo-notice"><Sparkles size={15}/> Preview catalogue · These are sample items, not live or bookable listings.</div>
-          <div className="product-grid">{demoProducts.map(product => <ProductCard product={product} key={product.id}/>)}</div>
+        <div className="page-shell"><div className="section-heading featured-heading"><div><span className="eyebrow">GOOD FINDS, CLOSE BY</span><h2>Popular around<br/><em>your corner.</em></h2></div><p className="section-intro">Discover useful things listed by people in your neighbourhood.</p></div>
+          {apiUnavailable && <div className="demo-notice"><Sparkles size={15}/> API unavailable · Showing sample items. These are not real inventory.</div>}
+          {loadingFeatured ? <p className="catalogue-status" role="status">Loading local listings…</p> :
+            featured.length ? <div className="product-grid">{featured.map(product => <ProductCard product={product} key={product.id}/>)}</div> :
+            <div className="empty-state"><Camera size={30}/><h2>New listings are on the way</h2><p>There are no approved items to show yet.</p></div>}
           <div className="center-action"><a href="/browse" className="button button-outline">Explore the marketplace <ArrowUpRight size={17}/></a></div>
         </div>
       </section>
